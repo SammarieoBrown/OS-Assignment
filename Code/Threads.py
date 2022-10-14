@@ -118,7 +118,7 @@ class ThreadOne(threading.Thread):
                 print("Thread 1: Buffer is full. Waiting for thread 2 to empty the buffer \n")
                 self.buffer.lock.release()
                 time.sleep(1)
-                self.buffer.lock.acquire()
+                #self.buffer.lock.acquire()
 
             self.buffer.add(character)
             # release the lock
@@ -142,12 +142,12 @@ class ThreadTwo(threading.Thread):
         while True:
             self.buffer.lock.acquire()
             # check if the buffer is empty
-            while self.buffer.is_empty():
+            if self.buffer.is_empty():
                 # if the buffer is empty, release the lock and wait for the buffer to be full
                 print("Thread 2: Buffer is empty. Waiting for thread 1 to fill the buffer \n")
                 self.buffer.lock.release()
                 time.sleep(1)
-                self.buffer.lock.acquire()
+                #self.buffer.lock.acquire()
 
             # loop through the buffer and convert all the characters to upper case
             for index in range(len(self.buffer)):
@@ -193,7 +193,7 @@ class ThreadThree(threading.Thread):
             print("Thread 3: Buffer is empty. Waiting for thread 1 to fill the buffer \n")
             self.buffer.lock.release()
             time.sleep(1)
-            self.buffer.lock.acquire()
+            #self.buffer.lock.acquire()
 
         # loop through the buffer and convert all the characters to upper case
         for index in range(0, len(self.buffer), 5):
