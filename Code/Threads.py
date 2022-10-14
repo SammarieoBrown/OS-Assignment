@@ -118,7 +118,7 @@ class ThreadOne(threading.Thread):
                 print("Thread 1: Buffer is full. Waiting for thread 2 to empty the buffer \n")
                 self.buffer.lock.release()
                 time.sleep(1)
-                #self.buffer.lock.acquire()
+                # self.buffer.lock.acquire()
 
             self.buffer.add(character)
             # release the lock
@@ -147,7 +147,7 @@ class ThreadTwo(threading.Thread):
                 print("Thread 2: Buffer is empty. Waiting for thread 1 to fill the buffer \n")
                 self.buffer.lock.release()
                 time.sleep(1)
-                #self.buffer.lock.acquire()
+                # self.buffer.lock.acquire()
 
             # loop through the buffer and convert all the characters to upper case
             for index in range(len(self.buffer)):
@@ -160,23 +160,9 @@ class ThreadTwo(threading.Thread):
             time.sleep(1)
 
 
-"""
-e. Thread #3 shall create packages from the contents of the buffer.
-f. Each packet shall have the following values separated by colons
-i. A two digit packet number. First packet is 0
-ii. A count (two digits) of the number of characters in the message portion of the packet.
-iii. The message
-
-input message  "HelloWorldIamAdam"
-# output message   00:05:HELLO
-                   01:05:WORLD
-                   02:05:IAMAD
-                   03:02:AM"
-"""
-
-
+# thread three class will be used to create packets from the contents of the buffer
+# class should stop when all the packets are created and the buffer is empty
 class ThreadThree(threading.Thread):
-
     def __init__(self, buffer):
         threading.Thread.__init__(self)
         self.buffer = buffer
@@ -186,33 +172,26 @@ class ThreadThree(threading.Thread):
         # loop through the buffer when the buffer is full then remove all the characters and convert them to upper
         # case and add them back to the buffer and release the lock
         # acquire the lock
-            while True:
-                self.buffer.lock.acquire()
-                # check if the buffer is empty
-                if self.buffer.is_empty():
-                    # if the buffer is empty, release the lock and wait for the buffer to be full
-                    print("Thread 3: Buffer is empty. Waiting for thread 1 to fill the buffer \n")
-                    self.buffer.lock.release()
-                    time.sleep(1)
-                    #self.buffer.lock.acquire()
-
-                # loop through the buffer and convert all the characters to upper case
-                for index in range(0, len(self.buffer), 5):
-                    print(Packet(self.packet_number, self.buffer[index:index + 5]))
-                    self.packet_number += 1
-
-                # release the lock
+        while True:
+            self.buffer.lock.acquire()
+            # check if the buffer is empty
+            if self.buffer.is_empty():
+                # if the buffer is empty, release the lock and wait for the buffer to be full
+                print("Thread 3: Buffer is empty. Waiting for thread 1 to fill the buffer \n")
                 self.buffer.lock.release()
-                # sleep for 0.5 seconds
-                print(f"Thread 3: {self.buffer} \n")
                 time.sleep(1)
+                # self.buffer.lock.acquire()
 
+            message = ""
+            for index in  range(len(self.buffer)):
+                message += self.buffer[index]
 
+            packet = Packet(self.packet_number, message)
+            self.packet_number += 1
 
-
-
-
-
+            print(f"Thread 3: {packet} \n")
+            self.buffer.lock.release()
+            time.sleep(1)
 
 
 
