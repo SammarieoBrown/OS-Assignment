@@ -78,9 +78,6 @@ class Packet(object):
     def __contains__(self, item):
         return item in self.message
 
-    def __add__(self, other):
-        return self.message + other.message
-
 
 class ThreadOne(threading.Thread):
     def __init__(self, buffer, message):
@@ -173,15 +170,14 @@ class ThreadThree(threading.Thread):
                 time.sleep(1)
             else:
                 for index in range(len(self.buffer)):
+                    self.packet.message += self.buffer.remove()
                     if len(self.packet) == 5:
-                        self.packet.message += self.buffer[index]
-                        del self.buffer[index]
-                        # else:
-                        print(self.packet)
+                        print(f"Thread 3: {self.packet} \n")
                         self.packet_number += 1
                         self.packet = Packet(self.packet_number, "")
                 self.buffer.lock.release()
-                time.sleep(5)
+                time.sleep(1)
+
 
 
 # the main function will create the buffer, the message, and the threads
