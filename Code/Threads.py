@@ -186,25 +186,26 @@ class ThreadThree(threading.Thread):
         # loop through the buffer when the buffer is full then remove all the characters and convert them to upper
         # case and add them back to the buffer and release the lock
         # acquire the lock
-        self.buffer.lock.acquire()
-        # check if the buffer is empty
-        while self.buffer.is_empty():
-            # if the buffer is empty, release the lock and wait for the buffer to be full
-            print("Thread 3: Buffer is empty. Waiting for thread 1 to fill the buffer \n")
-            self.buffer.lock.release()
-            time.sleep(1)
-            #self.buffer.lock.acquire()
+            while True:
+                self.buffer.lock.acquire()
+                # check if the buffer is empty
+                if self.buffer.is_empty():
+                    # if the buffer is empty, release the lock and wait for the buffer to be full
+                    print("Thread 3: Buffer is empty. Waiting for thread 1 to fill the buffer \n")
+                    self.buffer.lock.release()
+                    time.sleep(1)
+                    #self.buffer.lock.acquire()
 
-        # loop through the buffer and convert all the characters to upper case
-        for index in range(0, len(self.buffer), 5):
-            print(Packet(self.packet_number, self.buffer[index:index + 5]))
-            self.packet_number += 1
+                # loop through the buffer and convert all the characters to upper case
+                for index in range(0, len(self.buffer), 5):
+                    print(Packet(self.packet_number, self.buffer[index:index + 5]))
+                    self.packet_number += 1
 
-        # release the lock
-        self.buffer.lock.release()
-        # sleep for 0.5 seconds
-        print(f"Thread 3: {self.buffer} \n")
-        time.sleep(1)
+                # release the lock
+                self.buffer.lock.release()
+                # sleep for 0.5 seconds
+                print(f"Thread 3: {self.buffer} \n")
+                time.sleep(1)
 
 
 
@@ -226,10 +227,10 @@ def main():
     thread_three = ThreadThree(buffer)
     thread_one.start()
     thread_two.start()
-    #thread_three.start()
+    thread_three.start()
     thread_one.join()
     thread_two.join()
-   # thread_three.join()
+    thread_three.join()
 
     # for packet in thread_three.packets:
     #    print(packet)
