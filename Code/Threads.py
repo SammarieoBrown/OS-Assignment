@@ -1,27 +1,8 @@
-"""
-Write a multithreaded program that creates packets from a message. The program shall read a message
-of no more than 255 characters (terminated by a newline character) from the standard input and shall
-use threads to create packets from the input as described following:
-a. The program shall have a buffer of size 12 bytes.
-b. The program shall create three thread namely thread #1, thread #2, and thread #3.
-c. Thread #1 shall run to transfer characters from the input string into the buffer
-d. Thread #2 shall convert all the characters in the buffer to upper case
-e. Thread #3 shall create packages from the contents of the buffer.
-f. Each packet shall have the following values separated by colons
-i. A two digit packet number. First packet is 0
-ii. A count (two digits) of the number of characters in the message portion of the packet.
-iii. The message
-"""
-
 import threading
 import time
 import sys
 
 
-# the project should use the producer consumer model
-
-# buffer class that will be used to store the message from the user input
-# the buffer will have a capacity of 12 bytes
 class Buffer:
     def __init__(self):
         self.buffer = []
@@ -68,37 +49,39 @@ class Buffer:
         return self.buffer + other.buffer
 
 
-# The Packet class is a class that represents a packet. It has two attributes: packet_number and message. It has two
-# special functions: __str__ and __repr__.
-class Packet:
+class Packet(object):
     def __init__(self, packet_number, message):
-        """
-        This function takes in a packet number and a message and assigns them to the packet number and message attributes of
-        the object.
-
-        :param packet_number: The number of the packet
-        :param message: The message to be sent
-        """
         self.packet_number = packet_number
         self.message = message
 
     def __str__(self):
-        """
-        The function takes a packet object and returns a string representation of the packet
-        :return: The packet number, the length of the message, and the message itself.
-        """
-        return f"{self.packet_number:02d}:{len(self.message):02d}:{self.message}"
+        return f"{self.packet_number:02d}:{len(self.message):02d}:{self.message}:"
 
     def __repr__(self):
-        """
-        The __repr__ function is a special function that is called when you print an object
-        :return: The string representation of the object
-        """
-        return self.__str__()
+        return f"{self.packet_number:02d}:{len(self.message):02d}:{self.message}:"
+
+    def __len__(self):
+        return len(self.message)
+
+    def __getitem__(self, index):
+        return self.message[index]
+
+    def __setitem__(self, index, value):
+        self.message[index] = value
+
+    def __delitem__(self, index):
+        del self.message[index]
+
+    def __iter__(self):
+        return iter(self.message)
+
+    def __contains__(self, item):
+        return item in self.message
+
+    def __add__(self, other):
+        return self.message + other.message
 
 
-# the thread one class will be used to transfer characters from the input string into the buffer and implement
-# the producer consumer model with synchronization and mutual exclusion
 class ThreadOne(threading.Thread):
     def __init__(self, buffer, message):
         threading.Thread.__init__(self)
@@ -106,6 +89,17 @@ class ThreadOne(threading.Thread):
         self.message = message
 
     def run(self):
+        """
+        The function loops through the message and adds each character to the buffer.
+
+        The function also implements error handling for the buffer being full and the message being too long to fit in the
+        buffer at once.
+
+        The function acquires the lock, checks if the buffer is full, and if it is, releases the lock and waits for the
+        buffer to be empty.
+
+        The function then adds the character to the buffer, releases the lock, and sleeps for 0.5 seconds.
+        """
 
         # loop through the message and add each character to the buffer
         # implement error handling for the buffer being full and the message being too long to fit in the buffer at once
@@ -128,17 +122,15 @@ class ThreadOne(threading.Thread):
             time.sleep(1)
 
 
-# the thread two class will be used to remove each character from the buffer and convert it to uppercase and add it
-# back to the buffer it will also implement the producer consumer model with synchronization and mutual exclusion
 class ThreadTwo(threading.Thread):
     def __init__(self, buffer):
         threading.Thread.__init__(self)
         self.buffer = buffer
 
     def run(self):
-        # loop through the buffer when the buffer is full then remove all the characters and convert them to upper
-        # case and add them back to the buffer and release the lock
-        # acquire the lock
+        """
+        The function loops through the buffer and converts all the characters to upper case
+        """
         while True:
             self.buffer.lock.acquire()
             # check if the buffer is empty
@@ -160,59 +152,60 @@ class ThreadTwo(threading.Thread):
             time.sleep(1)
 
 
-# thread three class will be used to create packets from the contents of the buffer
-# class should stop when all the packets are created and the buffer is empty
 class ThreadThree(threading.Thread):
+
     def __init__(self, buffer):
         threading.Thread.__init__(self)
         self.buffer = buffer
         self.packet_number = 0
+        self.packet = Packet(self.packet_number, "")
 
     def run(self):
-        # loop through the buffer when the buffer is full then remove all the characters and convert them to upper
-        # case and add them back to the buffer and release the lock
-        # acquire the lock
+        """
+        It checks if the buffer is empty, if it is, it waits for thread 1 to fill it. If it isn't, it adds the buffer's
+        contents to the packet until the packet is full, then it prints the packet and starts a new one
+        """
         while True:
             self.buffer.lock.acquire()
-            # check if the buffer is empty
             if self.buffer.is_empty():
-                # if the buffer is empty, release the lock and wait for the buffer to be full
                 print("Thread 3: Buffer is empty. Waiting for thread 1 to fill the buffer \n")
                 self.buffer.lock.release()
                 time.sleep(1)
-                # self.buffer.lock.acquire()
-
-            message = ""
-            for index in  range(len(self.buffer)):
-                message += self.buffer[index]
-
-            packet = Packet(self.packet_number, message)
-            self.packet_number += 1
-
-            print(f"Thread 3: {packet} \n")
-            self.buffer.lock.release()
-            time.sleep(1)
-
+            else:
+                for index in range(len(self.buffer)):
+                    if len(self.packet) == 5:
+                        self.packet.message += self.buffer[index]
+                        del self.buffer[index]
+                        # else:
+                        print(self.packet)
+                        self.packet_number += 1
+                        self.packet = Packet(self.packet_number, "")
+                self.buffer.lock.release()
+                time.sleep(5)
 
 
-
-
-# the main function will be used to get the user input and create the threads
+# the main function will create the buffer, the message, and the threads
 def main():
-    message = "HelloWorldIamAdam"
+    # create the buffer
     buffer = Buffer()
+
+    # create the message
+    message = "HelloWorldIamAdam"
+
+    # create the threads
     thread_one = ThreadOne(buffer, message)
     thread_two = ThreadTwo(buffer)
     thread_three = ThreadThree(buffer)
+
+    # start the threads
     thread_one.start()
     thread_two.start()
     thread_three.start()
+
+    # join the threads
     thread_one.join()
     thread_two.join()
     thread_three.join()
-
-    # for packet in thread_three.packets:
-    #    print(packet)
 
 
 if __name__ == "__main__":
